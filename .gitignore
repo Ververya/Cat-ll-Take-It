@@ -1,0 +1,14 @@
+.venv/
+.browser-check/
+.browser-test/
+__pycache__/
+server.*.log
+dist/
+*.zip
+.env
+.env.*
+!.env.example
+assets/source/
+assets/**/*.png
+assets/*.png
+preview-*.png

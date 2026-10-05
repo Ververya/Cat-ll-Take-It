@@ -1,0 +1,53 @@
+.ritual-layer{position:absolute;inset:0;z-index:20;pointer-events:none}
+.game[data-pose=discard] .cat{left:20%;top:25.2%;width:76%;height:39.6%}
+.game[data-phase=STAMP] .stamp-tool{z-index:25;animation:physical-stamp .67s ease-in-out both}
+@keyframes physical-stamp{0%,100%{transform:translate(0,0)}38%{transform:translate(var(--stamp-dx),calc(var(--stamp-dy) - 30px)) rotate(-5deg)}58%,64%{transform:translate(var(--stamp-dx),var(--stamp-dy)) rotate(0)}78%{transform:translate(var(--stamp-dx),calc(var(--stamp-dy) - 25px))}}
+.counter-note .result-stamp{position:absolute;left:16%;right:auto;top:30px;bottom:auto;width:auto;height:auto;padding:5px 9px;max-width:78%;font-size:25px;white-space:nowrap;transform:rotate(-9deg);border-radius:0;opacity:.84;box-shadow:inset 0 0 0 1px #9c382955}
+.result-stamp:empty,.result-stamp.ink-pending{visibility:hidden}
+.stamp-visible{animation:ink-impression .28s ease-out both}
+@keyframes ink-impression{from{transform:rotate(-9deg) scale(1.13);opacity:.3}to{transform:rotate(-9deg) scale(1);opacity:.84}}
+.flight-ball,.paid-coin{position:absolute;width:38px;height:38px;object-fit:contain;filter:drop-shadow(0 5px 3px #160e0b66);margin:-19px 0 0 -19px}
+.flight-ball{animation:ball-to-box .95s ease-in both}
+@keyframes ball-to-box{0%{left:var(--start-x);top:var(--start-y);transform:scale(.95) rotate(0)}48%{left:var(--mid-x);top:var(--mid-y);transform:scale(.75) rotate(140deg)}88%{opacity:1}100%{left:var(--end-x);top:var(--end-y);transform:scale(.4) rotate(280deg);opacity:0}}
+.box-settle{animation:box-weight .35s ease-out}
+@keyframes box-weight{40%{transform:translateY(2px) rotate(.6deg)}}
+.paid-coin{animation:coin-on-wood 1.05s cubic-bezier(.2,.55,.3,1) both}
+@keyframes coin-on-wood{0%{left:var(--start-x);top:var(--start-y);transform:scale(.72) rotate(-8deg)}100%{left:var(--end-x);top:var(--end-y);transform:scale(1) rotate(13deg)}}
+.coin-label{position:absolute;color:#f1cf89;font-size:22px;font-family:Georgia,serif;text-shadow:0 2px 5px #201508;animation:ink-impression .35s ease-out}
+.split-paper .take{clip-path:polygon(0 0,96% 0,100% 10%,96% 20%,100% 31%,96% 43%,100% 55%,96% 67%,100% 78%,96% 90%,100% 100%,0 100%)}
+.split-paper .return{clip-path:polygon(4% 0,100% 0,100% 100%,4% 100%,0 90%,4% 78%,0 67%,4% 55%,0 43%,4% 31%,0 20%,4% 10%)}
+.tearing .take{animation:tear-left .85s ease-in-out both}.tearing .return{animation:tear-right .85s ease-in-out both}
+@keyframes tear-left{0%{transform:translateX(8px) rotate(0)}35%{transform:translateX(6px) rotate(-1deg)}100%{transform:translateX(0) rotate(-3deg)}}
+@keyframes tear-right{0%{transform:translateX(-8px) rotate(0)}35%{transform:translateX(-6px) rotate(1deg)}100%{transform:translateX(0) rotate(3deg)}}
+.counter-note .returned{animation:paper-return .9s ease-out both!important}
+@keyframes paper-return{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(28px) rotate(2deg)}}
+.action-paper{animation:pending-slip .8s ease-out both}
+@keyframes pending-slip{from{opacity:0;transform:translateY(-35px) rotate(-3deg)}to{opacity:1;transform:translateY(0) rotate(1deg)}}
+.game[data-state=ENDING] .counter-note:has(.action-paper){top:64%;left:15%;width:70%;z-index:8}
+@media(prefers-reduced-motion:reduce){.ritual-layer *,.stamp-tool,.result-stamp,.split-paper>*,.returned,.action-paper{animation-duration:.01ms!important}}
+@media(prefers-reduced-motion:reduce){.counter-note .returned,.game[data-phase=STAMP] .stamp-tool{animation-duration:.01ms!important}}
+/* Short phones retain the entire stall and the paper action within the viewport. */
+@media(max-width:759px) and (max-height:740px){
+  .game{min-height:100svh;height:100svh;max-height:none}
+  .scene-camera{--fit:.86;top:12px;transform:translateX(-50%) scale(calc(var(--zoom) * var(--fit))) translateY(var(--pan))}
+  .game[data-state=HOME] .interaction{top:auto;bottom:46px}
+  .game[data-state=INPUT]:not(.keyboard-open) .interaction{top:46%;bottom:auto}
+  .input-paper{padding:12px 16px}
+  .input-paper label{font-size:18px;line-height:1.4;margin:10px 0 6px}
+  .input-paper textarea{height:76px;max-height:90px;resize:none;margin-bottom:8px}
+  .privacy{margin-top:8px}
+  .game[data-state=ENDING] .interaction{bottom:46px}
+  footer{bottom:14px}
+}
+@media(max-width:759px) and (max-height:620px){
+  .scene-camera{--fit:.75;top:8px}
+  .game[data-state=INPUT]:not(.keyboard-open) .interaction{top:54%}
+  .game:not(.keyboard-open) .input-paper{padding:10px 14px}
+  .game:not(.keyboard-open) .input-paper label{font-size:16px;line-height:1.35;margin:7px 0 5px}
+  .game:not(.keyboard-open) .input-paper textarea{height:48px;min-height:48px;line-height:24px;margin-bottom:6px}
+  .game:not(.keyboard-open) .input-paper .paper-top{padding-bottom:5px;font-size:8px}
+  .game:not(.keyboard-open) .input-paper .privacy{margin-top:6px;font-size:7px}
+  .game[data-state=HOME] .interaction,.game[data-state=ENDING] .interaction{bottom:32px}
+  .game:is([data-state=SUBMITTED],[data-state=INSPECTING],[data-state=ACCEPTED],[data-state=PARTIAL],[data-state=REJECTED]) .interaction{top:91%}
+  footer{bottom:8px;font-size:8px}
+}
