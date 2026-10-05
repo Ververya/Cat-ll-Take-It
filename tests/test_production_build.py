@@ -12,6 +12,36 @@ build_site = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(build_site)
 
 class ProductionBuildTests(unittest.TestCase):
+    def test_entry_and_entire_module_graph_use_release_filenames(self):
+        info = json.loads((ROOT/'dist/build-info.json').read_text(encoding='utf-8'))
+        self.assertRegex(info['sourceCommit'], r'^[0-9a-f]{40}$')
+        self.assertRegex(info['release'], r'^[0-9a-f]{16}$')
+        names = info['runtimeAssets']
+        html = (ROOT/'dist/index.html').read_text(encoding='utf-8')
+        for name in ['app.js','visual.css','transaction.css','judgment-flow.css']:
+            self.assertIn('"'+names[name]+'"', html)
+            self.assertNotIn('"'+name+'"', html)
+        for original, versioned in names.items():
+            self.assertIn('.'+info['release']+'.', versioned)
+            text = (ROOT/'dist'/versioned).read_text(encoding='utf-8')
+            for match in re.findall(r"from\s+['\"]\./([^'\"]+)['\"]", text):
+                self.assertIn(match, names.values())
+                self.assertTrue((ROOT/'dist'/match).is_file())
+            if original.endswith('.css'):
+                self.assertNotIn('url(/', text)
+            self.assertNotRegex(text, r'https?://|\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(')
+
+    def test_dependency_changes_version_all_entry_points(self):
+        runtime = {name:(ROOT/'dist'/name).read_text(encoding='utf-8') for name in build_site.FILES if name!='index.html'}
+        def digest(files):
+            h=hashlib.sha256()
+            for name,body in sorted(files.items()):h.update((name+'\0'+body+'\0').encode('utf-8'))
+            return h.hexdigest()[:16]
+        info=json.loads((ROOT/'dist/build-info.json').read_text(encoding='utf-8'))
+        self.assertEqual(digest(runtime),info['release'])
+        runtime['presentation.js']+='\n// simulated future content update\n'
+        self.assertNotEqual(digest(runtime),info['release'])
+
     def test_development_sections_are_absent_from_artifact(self):
         source = (ROOT/'app.js').read_text(encoding='utf-8')
         compiled = build_site.compile_production(source)

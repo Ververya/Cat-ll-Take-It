@@ -2,6 +2,9 @@
 from pathlib import Path
 import shutil
 import re
+import hashlib
+import json
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / 'dist'
@@ -33,6 +36,13 @@ def compile_production(body):
     for forbidden in ['isDev', 'developer-override', 'judgment-debug', 'updateDebug', 'URLSearchParams']:
         if forbidden in body:
             raise ValueError(f'Development code remains in production: {forbidden}')
+    return body
+
+def version_runtime(body, names):
+    """Version module imports without changing their code or relative base path."""
+    for original, versioned in names.items():
+        for quote in ["'", '"']:
+            body = body.replace(f'{quote}./{original}{quote}', f'{quote}./{versioned}{quote}')
     return body
 
 def build():
@@ -74,6 +84,26 @@ def build():
         shutil.copy2(source, target)
     for name in POLICY_FILES:
         shutil.copy2(ROOT / name, DEST / name)
+    # One content-derived release ID versions the whole module graph, including
+    # dependencies: changing presentation.js also changes the cached app entry URL.
+    runtime = {name: (DEST/name).read_text(encoding='utf-8') for name in FILES if name != 'index.html'}
+    digest = hashlib.sha256()
+    for name, body in sorted(runtime.items()):
+        digest.update((name + '\0' + body + '\0').encode('utf-8'))
+    release = digest.hexdigest()[:16]
+    names = {name: f'{Path(name).stem}.{release}{Path(name).suffix}' for name in runtime}
+    for name, body in runtime.items():
+        (DEST/names[name]).write_text(version_runtime(body, names), encoding='utf-8', newline='\n')
+    html = (DEST/'index.html').read_text(encoding='utf-8')
+    for name, versioned in names.items():
+        html = html.replace(f'"{name}"', f'"{versioned}"')
+    (DEST/'index.html').write_text(html, encoding='utf-8', newline='\n')
+    # Keep legacy static URLs for compatibility with previously cached HTML;
+    # the current index and its module graph exclusively use versioned URLs.
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    if not re.fullmatch(r'[0-9a-f]{40}', commit):
+        raise ValueError('Cannot identify source commit')
+    (DEST/'build-info.json').write_text(json.dumps({'sourceCommit': commit, 'release': release, 'runtimeAssets': names}, indent=2)+'\n', encoding='utf-8', newline='\n')
     (DEST/'.nojekyll').write_text('', encoding='utf-8')
     size=sum(p.stat().st_size for p in DEST.rglob('*') if p.is_file())
     print(f'Pages artifact: {len(FILES)} runtime files, {len(assets)} assets, {size/1024/1024:.1f} MiB')
