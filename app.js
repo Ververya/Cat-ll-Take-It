@@ -32,7 +32,7 @@ function home() {
 function showInput() {
   unlockAudio();
   setState('INPUT');
-  panel.innerHTML = `<form class="paper input-paper"><div class="paper-top">爛情緒回收所 <span>回收單 / 001</span></div><p class="boss-note">「放桌上。」</p><label for="trouble">今天不想帶回家的，<br>是什麼？</label><textarea id="trouble" maxlength="800" placeholder="${pick(placeholders)}" required></textarea><div class="form-bottom"><span>寫一件就好。<b id="length">0 / 800</b></span><button class="primary" type="submit">放到桌上 <span>↑</span></button></div><p class="privacy">紙上內容只留在這次畫面，不儲存、不上傳。</p></form>`;
+  panel.innerHTML = `<form class="paper input-paper"><div class="paper-top">爛情緒回收所 <span>回收單 / 001</span></div><p class="boss-note">「放桌上。」</p><label for="trouble">今天不想帶回家的，<br>是什麼？</label><details class="privacy-notice"><summary><span class="privacy-title">🔒 放心罵，本喵不告密。</span><span class="privacy-subtitle">只在你的裝置處理・不保存・不上傳・我媽也看不到</span></summary><div class="privacy-explanation"><p>你的爛事只有你知道。</p><p>不用登入，也不保存你輸入的內容。<br>所有判斷都在你的裝置上完成，<br>不會把你輸入的內容傳給 AI、<br>網站擁有者或其他第三方服務。</p><p>關掉頁面後，本喵也不記得你罵過誰。</p><p>我媽叫我累積功德，沒叫我蒐集八卦。</p></div></details><textarea id="trouble" maxlength="800" placeholder="${pick(placeholders)}" required></textarea><div class="form-bottom"><span>寫一件就好。<b id="length">0 / 800</b></span><button class="primary" type="submit">放到桌上 <span>↑</span></button></div></form>`;
   const area = panel.querySelector('textarea');
   const form = panel.querySelector('form');
   area.oninput = () => { panel.querySelector('#length').textContent = `${area.value.length} / 800`; area.setCustomValidity(''); };
