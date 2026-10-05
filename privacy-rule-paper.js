@@ -15,8 +15,8 @@ export function showPrivacyRulePaper({ game, panel, onContinue, reopen = false }
   game.classList.add('privacy-rule-open');
   const paper = document.createElement('article');
   paper.className = 'paper privacy-rule-paper';
-  paper.setAttribute('aria-label', '本店保密規則');
-  paper.innerHTML = `<div class="paper-top">🔒 本店保密規則</div><h2 tabindex="-1">放心罵，本喵不告密。</h2><p>你寫的爛事，只留在你的裝置。</p><p class="privacy-rule-promise">不保存・不上傳・不傳給 AI・我媽也看不到</p><p>關掉頁面，本喵就忘了。</p><p class="privacy-rule-cat">我媽叫我累積功德，<br>沒叫我蒐集八卦。</p><button class="primary" type="button">知道了，讓我賣</button>`;
+  paper.setAttribute('aria-label', '爛情緒買賣須知');
+  paper.innerHTML = `<div class="paper-top"><h2 tabindex="-1">📜 爛情緒買賣須知</h2></div><p class="privacy-rule-subtitle">第一次來？<br>先看一下，本店有規矩。</p><h3>① 收購價格</h3><p>本店收購爛情緒，一件 $1。</p><p>值不值得收，<br>本喵說了算。</p><h3>② 保密規則</h3><p class="privacy-rule-assurance">🔒 放心罵，本喵不告密。</p><p>你寫的爛事，只留在你的裝置。</p><p class="privacy-rule-promise">不保存・不上傳・不傳給 AI・我媽也看不到</p><h3>③ 本喵有權拒收</h3><p>有些東西不是垃圾。<br>是妳還沒處理完的事。</p><p class="privacy-rule-cat">我媽叫我累積功德，<br>沒叫我蒐集八卦。</p><button class="primary" type="button">知道了，讓我賣</button>`;
   panel.append(paper);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   paper.animate([

@@ -18,8 +18,11 @@ export async function runPrivacyRuleTests() {
   assert(!!paper && !document.querySelector('textarea'), 'First visit must show rules before input');
   assert(game.dataset.state === 'HOME', 'Do not enter input state before confirmation');
   for (const text of [
-    '🔒 本店保密規則', '放心罵，本喵不告密。', '你寫的爛事，只留在你的裝置。',
-    '不保存・不上傳・不傳給 AI・我媽也看不到', '關掉頁面，本喵就忘了。',
+    '📜 爛情緒買賣須知', '第一次來？', '先看一下，本店有規矩。',
+    '① 收購價格', '本店收購爛情緒，一件 $1。', '值不值得收，', '本喵說了算。',
+    '② 保密規則', '🔒 放心罵，本喵不告密。', '你寫的爛事，只留在你的裝置。',
+    '不保存・不上傳・不傳給 AI・我媽也看不到',
+    '③ 本喵有權拒收', '有些東西不是垃圾。', '是妳還沒處理完的事。',
     '我媽叫我累積功德，', '沒叫我蒐集八卦。', '知道了，讓我賣',
   ]) assert(paper.textContent.includes(text), 'Required wording missing: ' + text);
   await sleep(750);
