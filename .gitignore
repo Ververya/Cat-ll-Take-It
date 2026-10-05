@@ -12,3 +12,6 @@ assets/source/
 assets/**/*.png
 assets/*.png
 preview-*.png
+audit/
+judgment-qa-report.json
+judgment-flow-qa.json

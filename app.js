@@ -12,9 +12,14 @@ const panel = app.querySelector('.interaction');
 const ledger = app.querySelector('.ledger');
 const pick = items => items[Math.floor(Math.random() * items.length)];
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-let state = 'HOME', input = '', result = '', running = false, clarificationRound = 0;
+let state = 'HOME', input = '', running = false, clarificationRound = 0;
 let stats = readStats();
-const isDev = new URLSearchParams(location.search).get('dev') === '1';
+// Compile-time flag: build_site.py sets false and removes DEVELOPMENT sections.
+const DEVELOPMENT = true;
+// #if DEVELOPMENT
+let result = '';
+const isDev = DEVELOPMENT && new URLSearchParams(location.search).get('dev') === '1';
+// #endif
 const lines = ['……有事？', '妳站很久了。', '先說好，太麻煩的不一定收。', '今天人類好多事。'];
 const placeholders = ['今天真的有一件很煩的事……','我知道可能很小事，但就是很煩……','有個人今天講了一句讓我很不爽的話……','有件事我到現在還一直想到……'];
 function setState(next) { state = next; game.dataset.state = next; presentState(next); }
@@ -46,14 +51,18 @@ async function stamp(text) {
 async function transact(clarification = {}) {
   if (running) return; running = true;
   const judgment = judge(input, {...clarification,clarifyCount:clarificationRound});
+  // #if DEVELOPMENT
   // Safety always takes priority over a developer demo override.
   if (judgment.outcome !== 'SAFETY' && isDev && result) {
     judgment.outcome = {ACCEPTED:'ACCEPT',PARTIAL:'PARTIAL',REJECTED:'REJECT'}[result];
     judgment.response = responseFor(judgment.outcome,input,judgment.signals);
     judgment.reason = 'developer-override';
   }
+  // #endif
   const chosen = {ACCEPT:'ACCEPTED',REJECT:'REJECTED'}[judgment.outcome] || judgment.outcome;
+  // #if DEVELOPMENT
   updateDebug(judgment);
+  // #endif
   if (chosen === 'SAFETY') { showSafety(judgment.response); return; }
   if (chosen === 'TEMP_HOLD') { showHold(judgment.response); return; }
   if (!clarification.kind) {
@@ -90,7 +99,9 @@ async function transact(clarification = {}) {
 function showClarify(judgment) {
   if(clarificationRound>=MAX_CLARIFY_COUNT){showHold(responseFor('TEMP_HOLD'));return;}
   running=false; clarificationRound++; setState('CLARIFY'); setPose('thinking');
+  // #if DEVELOPMENT
   updateDebug(judgment);
+  // #endif
   game.querySelector('.counter-note').replaceChildren();
   dialogue('……我只問一個。');
   panel.innerHTML='<form class="paper input-paper clarification-paper"><div class="paper-top">爛情緒回收所 <span>只問一次</span></div><p class="clarify-prompt"></p><div class="clarify-choices"></div></form>';
@@ -102,12 +113,14 @@ function showClarify(judgment) {
   }
   const exit=document.createElement('button');exit.className='close-transaction';exit.type='button';exit.textContent='先離開攤子';exit.onclick=()=>{if(!running){running=true;input='';leave();}};form.append(exit);
 }
+// #if DEVELOPMENT
 function updateDebug(judgment){
   if(!isDev)return;
   const debug=app.querySelector('.judgment-debug');if(!debug)return;
   const info={...judgment.signals,clarifyCount:clarificationRound,finalResult:judgment.outcome};
   debug.textContent=['eventDetected','targetDetected','actionDetected','emotionOnly','selfJudgmentDetected','unresolvedAction','boundaryIssue','recurringProblem','clarifyCount','confidence','finalResult'].map(key=>`${key}: ${info[key]}`).join('\n')+'\nreason: '+judgment.reason;
 }
+// #endif
 function showHold(response){
   setState('TEMP_HOLD');setPose('thinking');game.querySelector('.counter-note').replaceChildren();
   panel.innerHTML='<div class="paper input-paper clarification-paper"><div class="paper-top">爛情緒回收所 <span>今天先不分類</span></div><p class="clarify-prompt"></p><button class="primary" id="hold">先放桌上</button></div>';
@@ -140,5 +153,7 @@ async function award() {
 async function leave() { if (game.classList.contains('departing')) return; game.classList.add('departing'); await wait(900); app.querySelector('.exit-overlay').hidden = false; await wait(1800); app.querySelector('.exit-overlay').hidden = true; home(); }
 app.querySelector('.debt').onclick = () => { ledger.innerHTML = `<div class="paper ledger-paper"><button class="close" aria-label="關閉">×</button><small>一本不太想打開的帳</small><h2>本喵歷年欠款</h2><div class="total">$${stats.debt}</div><p>你曾經決定，<br>不再繼續帶走 ${stats.count} 件事。</p><p class="ledger-cat">「……妳事情真的很多。」</p><small>今日回收 ${stats.today} 件</small></div>`; ledger.showModal(); ledger.querySelector('.close').onclick = () => ledger.close(); };
 ledger.addEventListener('click', event => { if (event.target === ledger) ledger.close(); });
+// #if DEVELOPMENT
 if (isDev) { const dev = document.createElement('aside'); dev.className = 'dev'; dev.innerHTML = `<label>Developer · 下一筆結果 <select><option value="">本機判定</option><option value="ACCEPTED">收</option><option value="PARTIAL">收一半</option><option value="REJECTED">本喵拒收</option></select></label><details><summary>Judgment Debug</summary><pre class="judgment-debug">尚未交易</pre></details>`; app.append(dev); dev.querySelector('select').onchange = event => result = event.target.value; }
+// #endif
 home();
