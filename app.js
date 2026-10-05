@@ -1,6 +1,6 @@
 import { scene } from './scene.js';
 import { readStats, recycle } from './storage.js';
-import { presentState, dialogue, revealInput, setPose, prepareResults } from './presentation.js';
+import { presentState, dialogue, revealInput, setPose, prepareResults, selectEndingQuote } from './presentation.js';
 import { playStamp, discardPaper, tearPaper, returnPaper, pushCoin } from './transaction-animation.js';
 import { sound, unlockAudio } from './audio.js';
 import { judge, responseFor, clarificationChoices, MAX_CLARIFY_COUNT } from './judgment.js';
@@ -150,7 +150,24 @@ async function award() {
   if (!saved.persisted) { const warning = document.createElement('p'); warning.className = 'quiet'; warning.textContent = '瀏覽器無法保存紀錄，這筆欠款僅保留在本次畫面。'; panel.append(warning); }
   if (saved.easter) { ledger.innerHTML = `<div class="paper ledger-paper"><small>⚠ SYSTEM WARNING</small><h2>本店累計支出<br>已突破 $100</h2><p>老闆目前沒有倒閉，<br>但已經開始後悔開店。</p><p>「我媽只叫我累積功德。」<br>「沒說會這麼花錢。」</p><button class="primary">讓老闆靜一靜</button></div>`; ledger.showModal(); await new Promise(resolve => { ledger.querySelector('button').onclick = () => ledger.close(); ledger.addEventListener('close', resolve, { once: true }); }); }
 }
-async function leave() { if (game.classList.contains('departing')) return; game.classList.add('departing'); await wait(900); app.querySelector('.exit-overlay').hidden = false; await wait(1800); app.querySelector('.exit-overlay').hidden = true; home(); }
+async function leave() {
+  if (game.classList.contains('departing')) return;
+  const shownLines = Array.from(game.querySelector('.shop-dialogue').children, line => line.textContent);
+  const lines = shownLines.length === 2 ? shownLines : selectEndingQuote().lines;
+  game.classList.add('departing');
+  await wait(900);
+  const overlay = app.querySelector('.exit-overlay');
+  const text = overlay.querySelector('span');
+  text.replaceChildren();
+  lines.forEach((line, index) => {
+    if (index) text.append(document.createElement('br'));
+    text.append(document.createTextNode(line));
+  });
+  overlay.hidden = false;
+  await wait(1800);
+  overlay.hidden = true;
+  home();
+}
 app.querySelector('.debt').onclick = () => { ledger.innerHTML = `<div class="paper ledger-paper"><button class="close" aria-label="關閉">×</button><small>一本不太想打開的帳</small><h2>本喵歷年欠款</h2><div class="total">$${stats.debt}</div><p>你曾經決定，<br>不再繼續帶走 ${stats.count} 件事。</p><p class="ledger-cat">「……妳事情真的很多。」</p><small>今日回收 ${stats.today} 件</small></div>`; ledger.showModal(); ledger.querySelector('.close').onclick = () => ledger.close(); };
 ledger.addEventListener('click', event => { if (event.target === ledger) ledger.close(); });
 // #if DEVELOPMENT
