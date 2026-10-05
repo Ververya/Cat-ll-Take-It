@@ -4,6 +4,7 @@ import { presentState, dialogue, revealInput, setPose, prepareResults, selectEnd
 import { playStamp, discardPaper, tearPaper, returnPaper, pushCoin } from './transaction-animation.js';
 import { sound, unlockAudio } from './audio.js';
 import { judge, responseFor, clarificationChoices, MAX_CLARIFY_COUNT } from './judgment.js';
+import { routeCatIntent, selectCatResponse } from './cat-intent-router.js';
 
 const app = document.querySelector('#app');
 app.innerHTML = `<div class="game" data-state="HOME"><header><a class="wordmark" href="./">夜裡的小生意<span>OPEN AFTER DARK</span></a><button class="debt" aria-label="查看本喵歷年欠款">本喵欠款 <b>$0</b> <span>↗</span></button></header>${scene()}<section class="interaction" aria-live="polite"></section><footer><span class="open-dot"></span> 深夜營業中 <i>・</i> 隨時可以離開</footer><div class="exit-overlay" hidden><span>今天剩下的時間，是你的。</span></div></div><dialog class="ledger"></dialog>`;
@@ -50,6 +51,17 @@ async function stamp(text) {
 }
 async function transact(clarification = {}) {
   if (running) return; running = true;
+  if (!clarification.kind) {
+    const routed = routeCatIntent(input);
+    if (routed.route === 'CAT_CHAT') {
+      input = '';
+      panel.replaceChildren();
+      const response = selectCatResponse(routed.intent);
+      for (const line of response.lines) { dialogue(line); await wait(1500); }
+      home();
+      return;
+    }
+  }
   const judgment = judge(input, {...clarification,clarifyCount:clarificationRound});
   // #if DEVELOPMENT
   // Safety always takes priority over a developer demo override.
