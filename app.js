@@ -5,6 +5,7 @@ import { playStamp, discardPaper, tearPaper, returnPaper, pushCoin } from './tra
 import { sound, unlockAudio } from './audio.js';
 import { judge, responseFor, clarificationChoices, MAX_CLARIFY_COUNT } from './judgment.js';
 import { routeCatIntent, selectCatResponse } from './cat-intent-router.js';
+import { privacyNoticeAcknowledged, showPrivacyRulePaper } from './privacy-rule-paper.js';
 
 const app = document.querySelector('#app');
 app.innerHTML = `<div class="game" data-state="HOME"><header><a class="wordmark" href="./">夜裡的小生意<span>OPEN AFTER DARK</span></a><button class="debt" aria-label="查看本喵歷年欠款">本喵欠款 <b>$0</b> <span>↗</span></button></header>${scene()}<section class="interaction" aria-live="polite"></section><footer><span class="open-dot"></span> 深夜營業中 <i>・</i> 隨時可以離開</footer><div class="exit-overlay" hidden><span>今天剩下的時間，是你的。</span></div></div><dialog class="ledger"></dialog>`;
@@ -28,12 +29,16 @@ function debt() { app.querySelector('.debt b').textContent = `$${stats.debt}`; }
 function home() {
   running = false; input = ''; clarificationRound = 0; setState('HOME'); game.classList.remove('inspect','shake','departing'); debt();
   panel.innerHTML = `<div class="cat-line"><span>貓老闆</span><p>${pick(lines)}</p></div><button class="primary" id="start">我有東西要賣 <span>→</span></button><p class="quiet">一件爛情緒，一塊錢。先讓本喵看看。</p>`;
-  panel.querySelector('#start').onclick = showInput;
+  panel.querySelector('#start').onclick = () => {
+    if (privacyNoticeAcknowledged()) showInput();
+    else showPrivacyRulePaper({ game, panel, onContinue: showInput });
+  };
 }
 function showInput() {
   unlockAudio();
   setState('INPUT');
-  panel.innerHTML = `<form class="paper input-paper"><div class="paper-top">爛情緒回收所 <span>回收單 / 001</span></div><p class="boss-note">「放桌上。」</p><label for="trouble">今天不想帶回家的，<br>是什麼？</label><details class="privacy-notice"><summary><span class="privacy-title">🔒 放心罵，本喵不告密。</span><span class="privacy-subtitle">只在你的裝置處理・不保存・不上傳・我媽也看不到</span></summary><div class="privacy-explanation"><p>你的爛事只有你知道。</p><p>不用登入，也不保存你輸入的內容。<br>所有判斷都在你的裝置上完成，<br>不會把你輸入的內容傳給 AI、<br>網站擁有者或其他第三方服務。</p><p>關掉頁面後，本喵也不記得你罵過誰。</p><p>我媽叫我累積功德，沒叫我蒐集八卦。</p></div></details><textarea id="trouble" maxlength="800" placeholder="${pick(placeholders)}" required></textarea><div class="form-bottom"><span>寫一件就好。<b id="length">0 / 800</b></span><button class="primary" type="submit">放到桌上 <span>↑</span></button></div></form>`;
+  panel.innerHTML = `<form class="paper input-paper"><div class="paper-top">爛情緒回收所 <span>回收單 / 001</span></div><p class="boss-note">「放桌上。」</p><label for="trouble">今天不想帶回家的，<br>是什麼？</label><button class="privacy-rule-link" type="button">🔒 本喵不告密</button><textarea id="trouble" maxlength="800" placeholder="${pick(placeholders)}" required></textarea><div class="form-bottom"><span>寫一件就好。<b id="length">0 / 800</b></span><button class="primary" type="submit">放到桌上 <span>↑</span></button></div></form>`;
+  panel.querySelector('.privacy-rule-link').onclick = () => showPrivacyRulePaper({ game, panel, reopen: true });
   const area = panel.querySelector('textarea');
   const form = panel.querySelector('form');
   area.oninput = () => { panel.querySelector('#length').textContent = `${area.value.length} / 800`; area.setCustomValidity(''); };
