@@ -28,6 +28,18 @@ export function silentResultFor(id) {
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+const silentModeIntroResponses = Object.freeze([
+  ['不想講？', '太好了，本喵也不想聽。'],
+  ['不用交代案情。', '本店只負責估價。'],
+  ['不用跟本喵說。', '我媽又沒叫我做客服。'],
+  ['想著就好。', '本喵不需要知道妳全部的人生。'],
+  ['不用說。', '本喵沒有那麼好奇。'],
+  ['行。', '本喵也沒有很想知道。'],
+  ['用想的就好。', '省得本喵還要看。'],
+  ['不說也行。', '省一點彼此的時間。'],
+].map(lines => Object.freeze(lines)));
+let lastSilentIntro;
+
 export function showTradeModes({ game, panel, revealInput, sound, onWrite, onResult }) {
   game.classList.add('trade-mode-open');
   panel.innerHTML = `<article class="paper input-paper trade-mode-paper"><div class="paper-top">爛情緒回收所 <span>一件就好</span></div><button class="primary mode-option" id="write-mode" type="button">寫下來</button><button class="primary mode-option" id="silent-mode" type="button">不想講，用想的</button></article>`;
@@ -46,11 +58,18 @@ export function showTradeModes({ game, panel, revealInput, sound, onWrite, onRes
 
 async function showSilentMode({ game, panel, onResult }) {
   game.classList.add('silent-mode');
-  panel.innerHTML = `<article class="paper input-paper silent-think-paper"><div class="paper-top">爛情緒回收所 <span>不用寫</span></div><p class="silent-prompt">不想講也行。</p><button class="primary" id="silent-ready" type="button" hidden>嗯，想好了</button></article>`;
-  dialogue('不想講也行。');
+  const candidates = silentModeIntroResponses.filter(lines => lines !== lastSilentIntro);
+  const intro = candidates[Math.floor(Math.random() * candidates.length)];
+  lastSilentIntro = intro;
+  panel.innerHTML = `<article class="paper input-paper silent-think-paper"><div class="paper-top">爛情緒回收所 <span>不用寫</span></div><p class="silent-prompt"></p><button class="primary" id="silent-ready" type="button" hidden>嗯，想好了</button></article>`;
+  dialogue(intro[0]);
+  panel.querySelector('.silent-prompt').textContent = intro[0];
   await pause(900);
-  dialogue('想著那件事就好。');
-  panel.querySelector('.silent-prompt').textContent = '想著那件事就好。';
+  dialogue(intro[1]);
+  panel.querySelector('.silent-prompt').textContent = intro[1];
+  await pause(900);
+  dialogue('想好了再叫我。');
+  panel.querySelector('.silent-prompt').textContent = '想好了再叫我。';
   const ready = panel.querySelector('#silent-ready');
   ready.hidden = false;
   ready.onclick = async () => {

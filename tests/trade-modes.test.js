@@ -11,6 +11,17 @@ export async function runTradeModeTests() {
   let assertions = 0;
   const assert = (ok, message) => { assertions++; if (!ok) throw Error(message); };
   const results = [];
+  const introPairs = [
+    ['不想講？', '太好了，本喵也不想聽。'],
+    ['不用交代案情。', '本店只負責估價。'],
+    ['不用跟本喵說。', '我媽又沒叫我做客服。'],
+    ['想著就好。', '本喵不需要知道妳全部的人生。'],
+    ['不用說。', '本喵沒有那麼好奇。'],
+    ['行。', '本喵也沒有很想知道。'],
+    ['用想的就好。', '省得本喵還要看。'],
+    ['不說也行。', '省一點彼此的時間。'],
+  ];
+  let previousIntro;
   let textareasCreated = 0;
   const observer = new MutationObserver(records => {
     for (const record of records) for (const node of record.addedNodes) {
@@ -33,9 +44,19 @@ export async function runTradeModeTests() {
     const before = JSON.parse(localStorage.getItem('bad-mood-recycling-v1') || '{"count":0,"debt":0}');
     await openModes();
     document.querySelector('#silent-mode').click();
-    assert(document.querySelector('.silent-prompt').textContent === '不想講也行。', 'Opening line missing');
+    const prompt = document.querySelector('.silent-prompt');
+    const intro = introPairs.find(pair => pair[0] === prompt.textContent);
+    assert(!!intro, 'Opening line outside the eight approved pairs');
+    assert(intro !== previousIntro, 'Consecutive intro repeated');
+    previousIntro = intro;
+    assert(document.querySelector('#silent-ready').hidden, 'Ready button appeared before intro');
+    const observed = [];
+    const introObserver = new MutationObserver(() => observed.push(prompt.textContent));
+    introObserver.observe(prompt, {childList:true});
     await until(() => !document.querySelector('#silent-ready').hidden);
-    assert(document.querySelector('.silent-prompt').textContent === '想著那件事就好。', 'Think prompt missing');
+    introObserver.disconnect();
+    assert(observed.includes(intro[1]), 'Second intro line missing or mismatched');
+    assert(prompt.textContent === '想好了再叫我。', 'Shared closing line missing');
     document.querySelector('#silent-ready').click();
     await until(() => document.querySelectorAll('[data-silent-option]').length === 4);
     const buttons = [...document.querySelectorAll('[data-silent-option]')];
