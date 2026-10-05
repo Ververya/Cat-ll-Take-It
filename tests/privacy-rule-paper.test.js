@@ -28,6 +28,8 @@ export async function runPrivacyRuleTests() {
   await sleep(750);
   assert(performance.getEntriesByType('resource').length === initialResources, 'Rule appearance requested resources');
   paper.querySelector('button').click();
+  await until(() => !!document.querySelector('#write-mode') && !document.querySelector('.trade-mode-paper').inert);
+  document.querySelector('#write-mode').click();
   await until(() => !!document.querySelector('textarea') && !document.querySelector('form').inert);
   assert(sessionStorage.getItem('privacyNoticeAcknowledged') === 'true', 'Session acknowledgement missing');
   assert(game.dataset.state === 'INPUT', 'Original input state not resumed');
@@ -40,7 +42,9 @@ export async function runPrivacyRuleTests() {
   document.querySelector('form').requestSubmit();
   await until(() => game.dataset.state === 'HOME');
   document.querySelector('#start').click();
-  assert(!document.querySelector('.privacy-rule-paper') && !!document.querySelector('textarea'), 'Same-session transaction should skip rules');
+  assert(!document.querySelector('.privacy-rule-paper') && !!document.querySelector('#write-mode'), 'Same-session transaction should skip rules');
+  await until(() => !document.querySelector('.trade-mode-paper').inert);
+  document.querySelector('#write-mode').click();
   await until(() => !document.querySelector('form').inert);
 
   const input = document.querySelector('textarea');

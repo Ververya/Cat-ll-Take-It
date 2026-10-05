@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / 'dist'
 FILES = [
     'index.html', 'app.js', 'audio.js', 'judgment.js', 'storage.js',
-    'scene.js', 'presentation.js', 'transaction-animation.js', 'cat-intent-router.js', 'privacy-rule-paper.js',
+    'scene.js', 'presentation.js', 'transaction-animation.js', 'cat-intent-router.js', 'privacy-rule-paper.js', 'trade-modes.js',
     'visual.css', 'transaction.css', 'judgment-flow.css',
 ]
 POLICY_FILES = ['LICENSE', 'PRIVACY.md', 'THIRD_PARTY_NOTICES.md']

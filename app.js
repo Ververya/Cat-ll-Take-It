@@ -6,6 +6,7 @@ import { sound, unlockAudio } from './audio.js';
 import { judge, responseFor, clarificationChoices, MAX_CLARIFY_COUNT } from './judgment.js';
 import { routeCatIntent, selectCatResponse } from './cat-intent-router.js';
 import { privacyNoticeAcknowledged, showPrivacyRulePaper } from './privacy-rule-paper.js';
+import { showTradeModes } from './trade-modes.js';
 
 const app = document.querySelector('#app');
 app.innerHTML = `<div class="game" data-state="HOME"><header><a class="wordmark" href="./">夜裡的小生意<span>OPEN AFTER DARK</span></a><button class="debt" aria-label="查看本喵歷年欠款">本喵欠款 <b>$0</b> <span>↗</span></button></header>${scene()}<section class="interaction" aria-live="polite"></section><footer><span class="open-dot"></span> 深夜營業中 <i>・</i> 隨時可以離開</footer><div class="exit-overlay" hidden><span>今天剩下的時間，是你的。</span></div></div><dialog class="ledger"></dialog>`;
@@ -30,9 +31,15 @@ function home() {
   running = false; input = ''; clarificationRound = 0; setState('HOME'); game.classList.remove('inspect','shake','departing'); debt();
   panel.innerHTML = `<div class="cat-line"><span>貓老闆</span><p>${pick(lines)}</p></div><button class="primary" id="start">我有東西要賣 <span>→</span></button><p class="quiet">一件爛情緒，一塊錢。先讓本喵看看。</p>`;
   panel.querySelector('#start').onclick = () => {
-    if (privacyNoticeAcknowledged()) showInput();
-    else showPrivacyRulePaper({ game, panel, onContinue: showInput });
+    if (privacyNoticeAcknowledged()) showModes();
+    else showPrivacyRulePaper({ game, panel, onContinue: showModes });
   };
+}
+function showModes() {
+  unlockAudio();
+  setState('INPUT');
+  showTradeModes({ game, panel, revealInput, sound, onWrite: showInput,
+    onResult: silentResult => { input = ''; return transact({}, silentResult); } });
 }
 function showInput() {
   unlockAudio();
@@ -54,9 +61,9 @@ function say(text) { panel.querySelector('#dialogue').textContent = text; dialog
 async function stamp(text) {
   await playStamp(text, sound);
 }
-async function transact(clarification = {}) {
+async function transact(clarification = {}, silentResult = null) {
   if (running) return; running = true;
-  if (!clarification.kind) {
+  if (!silentResult && !clarification.kind) {
     const routed = routeCatIntent(input);
     if (routed.route === 'CAT_CHAT') {
       input = '';
@@ -67,10 +74,10 @@ async function transact(clarification = {}) {
       return;
     }
   }
-  const judgment = judge(input, {...clarification,clarifyCount:clarificationRound});
+  const judgment = silentResult || judge(input, {...clarification,clarifyCount:clarificationRound});
   // #if DEVELOPMENT
   // Safety always takes priority over a developer demo override.
-  if (judgment.outcome !== 'SAFETY' && isDev && result) {
+  if (!silentResult && judgment.outcome !== 'SAFETY' && isDev && result) {
     judgment.outcome = {ACCEPTED:'ACCEPT',PARTIAL:'PARTIAL',REJECTED:'REJECT'}[result];
     judgment.response = responseFor(judgment.outcome,input,judgment.signals);
     judgment.reason = 'developer-override';
@@ -78,17 +85,21 @@ async function transact(clarification = {}) {
   // #endif
   const chosen = {ACCEPT:'ACCEPTED',REJECT:'REJECTED'}[judgment.outcome] || judgment.outcome;
   // #if DEVELOPMENT
-  updateDebug(judgment);
+  if (!silentResult) updateDebug(judgment);
   // #endif
   if (chosen === 'SAFETY') { showSafety(judgment.response); return; }
   if (chosen === 'TEMP_HOLD') { showHold(judgment.response); return; }
-  if (!clarification.kind) {
+  if (!silentResult && !clarification.kind) {
   setState('SUBMITTED'); note(); sound('paper'); await Promise.all([wait(950),prepareResults()]);
   setState('INSPECTING'); game.classList.add('inspect');
   sound('thud');
   for (const [index,text] of ['聞聞……','這什麼東西……','分析爛度……','思考值不值 $1……', pick(['好像不能吃。','嗯……'])].entries()) { if(index===3)setPose('thinking'); say(text); await wait(500); }
   game.classList.remove('inspect');
-  } else { note(); }
+  } else {
+    if (silentResult) await prepareResults();
+    note();
+    if (silentResult) game.querySelector('.user-note').textContent = '沒有寫下的那件事';
+  }
   if (chosen === 'CLARIFY') { showClarify(judgment); return; }
   setState(chosen);
   panel.querySelector('.status-label').textContent = '貓老闆的鑑定';
